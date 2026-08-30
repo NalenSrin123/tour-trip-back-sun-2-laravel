@@ -46,31 +46,6 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-<<<<<<< HEAD
-        public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function tourSchedule()
-    {
-        return $this->belongsTo(TourSchedule::class);
-    }
-
-    public function participants()
-    {
-        return $this->hasMany(Participant::class);
-    }
-
-    public function invoice()
-    {
-        return $this->hasOne(Invoice::class);
-    }
-
-    public function bookingPartials()
-    {
-        return $this->hasMany(BookingPartial::class);
-=======
 
     public function socialAccounts()
     {
@@ -80,6 +55,5 @@ class User extends Authenticatable
     public function roles()
     {
         return $this->hasMany(Role::class);
->>>>>>> 9222cc9be9d429e4aac606bb0af919e539b45b56
     }
 }
