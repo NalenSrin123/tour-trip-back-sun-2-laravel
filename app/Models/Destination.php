@@ -13,4 +13,9 @@ class Destination extends Model
         'image',
         'status',
     ];
+
+    public function tours(){
+        return $this -> hasMany(Tour::class);
+    }
+
 }

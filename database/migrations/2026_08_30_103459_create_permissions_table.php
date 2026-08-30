@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('social_accounts', function (Blueprint $table) {
+        Schema::create('permissions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('provider');
-            $table->string('provider_id');
+            $table->string('name')->unique();
             $table->timestamps();
-            $table->softDeletes(); // support soft deletes for social accounts
+            $table->softDeletes(); // support soft deletes for permissions
         });
     }
 
@@ -26,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('social_accounts');
+        Schema::dropIfExists('permissions');
     }
 };

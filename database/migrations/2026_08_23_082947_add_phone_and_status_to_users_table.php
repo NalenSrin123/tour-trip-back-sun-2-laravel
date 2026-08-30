@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('phone')->nullable()->after('email');
+            $table->enum('status', ['active', 'inactive'])->default('inactive')->after('phone');
+            $table->softDeletes(); // support soft deletes for users
         });
     }
 
