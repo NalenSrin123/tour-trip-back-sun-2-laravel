@@ -78,7 +78,7 @@ class AuthController extends Controller
         }
 
         // Send Telegram Greeting
-        $this->botTelegramGreetingMessage($user->email);
+        $this->botTelegramGreetingMessage($user);
 
         // ISSUE THE TOKEN HERE
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -86,6 +86,7 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Login successful.',
             'access_token' => $token, // The frontend NEEDS this!
+            'user' => $user,
             'token_type' => 'Bearer'
         ], 200);
     }
@@ -127,17 +128,17 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Verification successful.',
-            'access_token' => $token
+            'access_token' => $token,
+            'user' => $user,
+            'token_type' => 'Bearer'
         ]);
     }
-    public function botTelegramGreetingMessage($email)
+    public function botTelegramGreetingMessage($user)
     {
-
-
         Http::post("https://api.telegram.org/bot" . env('TELEGRAM_BOT_TOKEN') . "/sendMessage", [
             'chat_id' => env('TELEGRAM_GROUP_ID'),
-            'text' => 'Welcome! ' . $email .' You have successfully logged in.',
-            'parse_mode' => $request->parse_mode ?? 'Markdown'
+            'text' => "*Welcome, {$user->name}\\!*\n\nYou have successfully logged in\\.",
+            'parse_mode' => 'MarkdownV2'
         ]);
 
     }

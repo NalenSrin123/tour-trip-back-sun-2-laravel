@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Auth\GoogleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Sanctum;
@@ -13,12 +15,16 @@ Route::get('/user', function (Request $request) {
 Route::apiResource('categories', CategoryController::class);
 
 Route::prefix('/auth')->group(function () {
-    Route::post('/register', [\App\Http\Controllers\Api\AuthController::class, 'register']);
-    Route::post('/verify-otp', [\App\Http\Controllers\Api\AuthController::class, 'verifyOtp']);
-    Route::post('/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::post('/login', [AuthController::class, 'login']);
+
+    // Google OAuth Routes
+    Route::get('/google/redirect', [GoogleController::class, 'redirectToGoogle']);
+    Route::get('/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 
     // 2. PROTECTED ROUTES (Middleware goes here)
     Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
+        Route::post('/logout', [AuthController::class, 'logout']);
     });
 });
