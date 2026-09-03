@@ -1,60 +1,56 @@
 <?php
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use App\Models\User;
-use Carbon\Carbon;
+use App\Service\OTPService;
+use App\Service\TelegramService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
 
 class AuthController extends Controller
 {
+    // Define a private property
+    private $otpService;
+    private $telegramService;
+
+    public function __construct(OTPService $oTPService, TelegramService $telegramService)
+    {
+        $this->otpService = $oTPService;
+        $this->telegramService = $telegramService;
+    }
+
     public function register(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users',
             'password_hash' => 'required|min:8|confirmed',
+            'channel' => 'nullable|in:telegram,email', // Optional channel selection
         ]);
+        $user = DB::transaction(function () use ($request) {
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password_hash' => Hash::make($request->password_hash),
-            // Note: email_verified_at is null by default
-        ]);
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password_hash' => Hash::make($request->password_hash),
+                // Note: email_verified_at is null by default
+            ]);
 
-        // Send the verification OTP
-        $this->sendOtpToGroup($user);
+            // Generate and send OTP based on the requested channel or default to Telegram
+            $this->otpService->generateAndSend($user, $request->channel ?? 'telegram');
 
-        return response()->json([
-            'message' => 'User registered. Please check the Telegram group for your verification OTP.',
-            'user' => $user,
-        ], 201);
+            return response()->json([
+                'message' => 'User registered. Please check the Telegram group for your verification OTP.',
+                'user' => $user,
+            ], 201);
+        });
     }
 
-    private function sendOtpToGroup(User $user)
-    {
-        $plainOtp = rand(100000, 999999);
-
-        // 1. Save to the separate OTPs table
-        $user->otps()->create([
-            'code' => Hash::make($plainOtp),
-            'expires_at' => Carbon::now()->addMinutes(5),
-            'is_used' => false
-        ]);
-
-        // 2. Format the message
-        $message = "OTP request for {$user->email}\nCode: *{$plainOtp}*\nExpires in 5 minutes.";
-
-        // 3. Send to the Group Chat defined in .env
-        Http::post("https://api.telegram.org/bot" . env('TELEGRAM_BOT_TOKEN') . "/sendMessage", [
-            'chat_id' => env('TELEGRAM_GROUP_ID'),
-            'text' => $message,
-            'parse_mode' => 'Markdown'
-        ]);
-    }
 
     public function login(Request $request)
     {
@@ -73,12 +69,12 @@ class AuthController extends Controller
 
         // Check if verified
         if (is_null($user->email_verified_at)) {
-            $this->sendOtpToGroup($user);
+            $this->otpService->generateAndSend($user, 'telegram');
             return response()->json(['message' => 'Account not verified. A new OTP has been sent.'], 403);
         }
 
         // Send Telegram Greeting
-        $this->botTelegramGreetingMessage($user);
+        $this->telegramService->GreetingMessage($user);
 
         // ISSUE THE TOKEN HERE
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -118,9 +114,22 @@ class AuthController extends Controller
         // BUG FIX: Correct syntax for updating the OTP status
         $user->otps()->where('id', $latestOtp->id)->update(['is_used' => true]);
 
+
+        // Set Role to 'user' if not already set
+        $userRole = Role::where('name', 'user')->first();
+        if ($userRole) {
+            $user->roles()->syncWithoutDetaching([$userRole->id]);
+
+            // Tip: Since it's a brand new user, you can also just use attach():
+            // $user->roles()->attach($userRole->id);
+        }
+
         // NEW: Mark account as verified if it is their first time verifying
         if (is_null($user->email_verified_at)) {
-            $user->update(['email_verified_at' => Carbon::now()]);
+            $user->update([
+                'email_verified_at' => Carbon::now(),
+                'status' => 'active',
+            ]);
         }
 
         // Issue token
@@ -133,15 +142,7 @@ class AuthController extends Controller
             'token_type' => 'Bearer'
         ]);
     }
-    public function botTelegramGreetingMessage($user)
-    {
-        Http::post("https://api.telegram.org/bot" . env('TELEGRAM_BOT_TOKEN') . "/sendMessage", [
-            'chat_id' => env('TELEGRAM_GROUP_ID'),
-            'text' => "*Welcome, {$user->name}\\!*\n\nYou have successfully logged in\\.",
-            'parse_mode' => 'MarkdownV2'
-        ]);
 
-    }
 
     public function logout(Request $request)
     {

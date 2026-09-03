@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Role;
@@ -45,7 +45,7 @@ class GoogleController extends Controller
                 ]);
 
                 // 3. Set Role to 'user' if not already set
-                $userRole = $user->roles()->where('name', 'user')->first();
+                $userRole = Role::where('name', 'user')->first();
                 if ($userRole) {
                     $user->roles()->syncWithoutDetaching([$userRole->id]);
                 }

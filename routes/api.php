@@ -1,8 +1,8 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\Api\Auth\GoogleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Sanctum;
