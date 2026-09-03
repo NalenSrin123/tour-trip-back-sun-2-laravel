@@ -30,25 +30,30 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users',
             'password_hash' => 'required|min:8|confirmed',
-            'channel' => 'nullable|in:telegram,email', // Optional channel selection
+            'channel' => 'nullable|in:telegram,email',
         ]);
+
+        // 1. Run the database operations and return the newly created user
         $user = DB::transaction(function () use ($request) {
 
-            $user = User::create([
+            $newUser = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password_hash' => Hash::make($request->password_hash),
-                // Note: email_verified_at is null by default
             ]);
 
-            // Generate and send OTP based on the requested channel or default to Telegram
-            $this->otpService->generateAndSend($user, $request->channel ?? 'telegram');
+            // Generate and send OTP
+            $this->otpService->generateAndSend($newUser, $request->channel ?? 'telegram');
 
-            return response()->json([
-                'message' => 'User registered. Please check the Telegram group for your verification OTP.',
-                'user' => $user,
-            ], 201);
+            // Return the user object out of the transaction block
+            return $newUser;
         });
+
+        // 2. Return the HTTP JSON response outside of the transaction
+        return response()->json([
+            'message' => 'User registered. Please check for your verification OTP.',
+            'user' => $user,
+        ], 201);
     }
 
 
