@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,12 +12,27 @@ return new class extends Migration
     {
         Schema::create('tours', function (Blueprint $table) {
             $table->id();
-            $table->string('title', 255);
-            $table->text('description')->nullable();
-            $table->string('destination', 255);
+            $table->foreignId('category_id')
+                ->nullable()
+                ->constrained('categories')
+                ->onDelete('set null'); //  to 'set null' if the referenced destination is deleted
+
+            $table->foreignId('destination_id')
+                ->nullable()
+                ->constrained('destinations')
+                ->onDelete('set null'); //  to 'set null' if the referenced destination is deleted
+
+            $table->string('title');
+            $table->string('slug')->unique();
+            $table->integer('duration_days');
+            $table->integer('duration_nights');
             $table->decimal('base_price', 10, 2);
-            $table->tinyInteger('status');
+            $table->decimal('price_override', 10, 2)->nullable();
+            $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->timestamps();
+            $table->softDeletes();
+
+            $table->index('slug');
         });
     }
 

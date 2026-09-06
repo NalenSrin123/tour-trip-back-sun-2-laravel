@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Tour;
-use App\Models\Tour_images;
+use App\Models\TourImages;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -17,7 +16,7 @@ class TourImageController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Tour_images::with('tour');
+        $query = TourImages::with('tour');
 
         // Filter by tour_id if provided
         if ($request->filled('tour_id')) {
@@ -69,7 +68,7 @@ class TourImageController extends Controller
         return DB::transaction(function () use ($request, $tourId, $isPrimary, $status) {
             // If marked as primary, reset previous primary images for this tour
             if ($isPrimary) {
-                Tour_images::where('tour_id', $tourId)->update(['is_primary' => false]);
+                TourImages::where('tour_id', $tourId)->update(['is_primary' => false]);
             }
 
             // Case 1: Multiple images upload
@@ -78,12 +77,12 @@ class TourImageController extends Controller
                 $files = $request->file('images');
 
                 foreach ($files as $index => $file) {
-                    $path = $file->store('tour_images', 'public');
+                    $path = $file->store('TourImages', 'public');
 
                     // Set primary only for the first uploaded image if requested
                     $primaryFlag = ($index === 0 && $isPrimary);
 
-                    $createdImages[] = Tour_images::create([
+                    $createdImages[] = TourImages::create([
                         'tour_id'    => $tourId,
                         'image_url'  => $path,
                         'is_primary' => $primaryFlag,
@@ -100,15 +99,15 @@ class TourImageController extends Controller
 
             // Case 2: Single image upload
             $file = $request->file('image');
-            $path = $file->store('tour_images', 'public');
+            $path = $file->store('TourImages', 'public');
 
             // If this is the tour's first image, make it primary automatically unless specified
-            $hasExistingImages = Tour_images::where('tour_id', $tourId)->exists();
+            $hasExistingImages = TourImages::where('tour_id', $tourId)->exists();
             if (!$hasExistingImages && !$request->has('is_primary')) {
                 $isPrimary = true;
             }
 
-            $tourImage = Tour_images::create([
+            $tourImage = TourImages::create([
                 'tour_id'    => $tourId,
                 'image_url'  => $path,
                 'is_primary' => $isPrimary,
@@ -129,7 +128,7 @@ class TourImageController extends Controller
      */
     public function show(string $id)
     {
-        $tourImage = Tour_images::with('tour')->find($id);
+        $tourImage = TourImages::with('tour')->find($id);
 
         if (!$tourImage) {
             return response()->json([
@@ -151,7 +150,7 @@ class TourImageController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $tourImage = Tour_images::find($id);
+        $tourImage = TourImages::find($id);
 
         if (!$tourImage) {
             return response()->json([
@@ -174,12 +173,12 @@ class TourImageController extends Controller
                     Storage::disk('public')->delete($tourImage->image_url);
                 }
 
-                $validated['image_url'] = $request->file('image')->store('tour_images', 'public');
+                $validated['image_url'] = $request->file('image')->store('TourImages', 'public');
             }
 
             // If updating to primary, unset others in the same tour
             if (isset($validated['is_primary']) && $validated['is_primary']) {
-                Tour_images::where('tour_id', $tourImage->tour_id)
+                TourImages::where('tour_id', $tourImage->tour_id)
                     ->where('id', '!=', $tourImage->id)
                     ->update(['is_primary' => false]);
             }
@@ -200,7 +199,7 @@ class TourImageController extends Controller
      */
     public function destroy(string $id)
     {
-        $tourImage = Tour_images::find($id);
+        $tourImage = TourImages::find($id);
 
         if (!$tourImage) {
             return response()->json([
@@ -221,7 +220,7 @@ class TourImageController extends Controller
 
         // If primary image was deleted, promote another image if available
         if ($wasPrimary) {
-            $nextImage = Tour_images::where('tour_id', $tourId)->latest()->first();
+            $nextImage = TourImages::where('tour_id', $tourId)->latest()->first();
             if ($nextImage) {
                 $nextImage->update(['is_primary' => true]);
             }
@@ -239,7 +238,7 @@ class TourImageController extends Controller
      */
     public function setPrimary(string $id)
     {
-        $tourImage = Tour_images::find($id);
+        $tourImage = TourImages::find($id);
 
         if (!$tourImage) {
             return response()->json([
@@ -250,7 +249,7 @@ class TourImageController extends Controller
 
         DB::transaction(function () use ($tourImage) {
             // Reset all sibling images for this tour
-            Tour_images::where('tour_id', $tourImage->tour_id)
+            TourImages::where('tour_id', $tourImage->tour_id)
                 ->where('id', '!=', $tourImage->id)
                 ->update(['is_primary' => false]);
 

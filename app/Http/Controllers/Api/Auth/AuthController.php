@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Nette\Schema\ValidationException;
 
 
 class AuthController extends Controller
@@ -25,36 +26,59 @@ class AuthController extends Controller
     }
 
     public function register(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users',
-            'password_hash' => 'required|min:8|confirmed',
-            'channel' => 'nullable|in:telegram,email',
-        ]);
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|max:255', // Removed unique:users to allow unverified re-registration
+        'password_hash' => 'required|min:8|confirmed',
+        'channel' => 'nullable|in:telegram,email',
+    ]);
 
-        // 1. Run the database operations and return the newly created user
-        $user = DB::transaction(function () use ($request) {
+    // 1. Run database operations
+    $user = DB::transaction(function () use ($request) {
+        $user = User::where('email', $request->email)->first();
 
-            $newUser = User::create([
+        if ($user) {
+            // Reject if the user exists AND is already verified
+            if ($user->email_verified_at !== null) {
+                throw ValidationException::withMessages([
+                    'email' => ['This email has already been taken.'],
+                ]);
+            }
+            
+            // If they exist but are unverified, update their details with the latest input
+            $user->update([
+                'name' => $request->name,
+                'password_hash' => Hash::make($request->password_hash),
+            ]);
+        } else {
+            // Create a brand-new user
+            $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password_hash' => Hash::make($request->password_hash),
             ]);
 
-            // Generate and send OTP
-            $this->otpService->generateAndSend($newUser, $request->channel ?? 'telegram');
+            // Assign default 'customer' role
+            $customerRole = Role::where('name', 'customer')->first();
+            if ($customerRole) {
+                $user->roles()->attach($customerRole->id);
+            }
+        }
 
-            // Return the user object out of the transaction block
-            return $newUser;
-        });
+        return $user;
+    });
 
-        // 2. Return the HTTP JSON response outside of the transaction
-        return response()->json([
-            'message' => 'User registered. Please check for your verification OTP.',
-            'user' => $user,
-        ], 201);
-    }
+    // 2. Send OTP outside the transaction (Ensures DB commit was successful first)
+    $channel = $request->input('channel', 'telegram');
+    $this->otpService->generateAndSend($user, $channel);
+
+    // 3. Return the HTTP JSON response
+    return response()->json([
+        'message' => 'User registered. Please check for your verification OTP.',
+        'user' => $user->load('roles'), // Optional: load roles to confirm in the response
+    ], 201);
+}
 
 
     public function login(Request $request)

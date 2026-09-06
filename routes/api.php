@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\TourController;
 use App\Http\Controllers\Api\TourImageController;
 use App\Http\Controllers\Api\Auth\GoogleController;
 use App\Http\Controllers\RoleController;
@@ -34,5 +35,15 @@ Route::prefix('/auth')->group(function () {
     // 2. PROTECTED ROUTES (Middleware goes here)
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
+    });
+});
+
+
+Route::prefix('/tours')->group(function () {
+    Route::apiResource('/', TourController::class)->only(['index', 'show'])->parameters(['' => 'id']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::apiResource('/', TourController::class)->only(['store', 'update', 'destroy'])->parameters(['' => 'id']);
+        Route::post('/{id}/restore', [TourController::class, 'restore']);
     });
 });
