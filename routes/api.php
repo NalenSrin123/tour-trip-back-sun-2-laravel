@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\TourImageController;
 use App\Http\Controllers\Api\Auth\GoogleController;
+use App\Http\Controllers\RoleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -13,6 +14,9 @@ Route::get('/user', function (Request $request) {
 
 // Categories CRUD API Routes
 Route::apiResource('categories', CategoryController::class);
+
+// Roles CRUD API Routes
+Route::apiResource('roles', RoleController::class);
 
 // Tour Images CRUD API Routes
 Route::patch('tour-images/{id}/primary', [TourImageController::class, 'setPrimary']);
