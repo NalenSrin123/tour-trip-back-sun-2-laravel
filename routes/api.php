@@ -14,6 +14,9 @@ Route::get('/user', function (Request $request) {
 // Categories CRUD API Routes
 Route::apiResource('categories', CategoryController::class);
 
+Route::apiResource('roles', RoleController::class);
+
+
 Route::prefix('/auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
