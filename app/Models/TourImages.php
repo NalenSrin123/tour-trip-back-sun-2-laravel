@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Tour_images extends Model
+class TourImages extends Model
 {
     protected $table = 'tour_images';
 
@@ -26,7 +26,7 @@ class Tour_images extends Model
     /**
      * Get the full URL for the image.
      */
-    public function getFullImageUrlAttribute(): ?string
+    public function getFullImageUrlAttribute(): ?string // by Som Chan Chav
     {
         if (!$this->image_url) {
             return null;
