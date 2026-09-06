@@ -15,6 +15,30 @@ class Tour_images extends Model
         'status',
     ];
 
+    protected $casts = [
+        'is_primary' => 'boolean',
+    ];
+
+    protected $appends = [
+        'full_image_url',
+    ];
+
+    /**
+     * Get the full URL for the image.
+     */
+    public function getFullImageUrlAttribute(): ?string
+    {
+        if (!$this->image_url) {
+            return null;
+        }
+
+        if (filter_var($this->image_url, FILTER_VALIDATE_URL)) {
+            return $this->image_url;
+        }
+
+        return asset('storage/' . $this->image_url);
+    }
+
     public function tour()
     {
         return $this->belongsTo(Tour::class, 'tour_id');

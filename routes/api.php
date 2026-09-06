@@ -2,10 +2,10 @@
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\TourImageController;
 use App\Http\Controllers\Api\Auth\GoogleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Laravel\Sanctum\Sanctum;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -13,6 +13,10 @@ Route::get('/user', function (Request $request) {
 
 // Categories CRUD API Routes
 Route::apiResource('categories', CategoryController::class);
+
+// Tour Images CRUD API Routes
+Route::patch('tour-images/{id}/primary', [TourImageController::class, 'setPrimary']);
+Route::apiResource('tour-images', TourImageController::class);
 
 Route::prefix('/auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
