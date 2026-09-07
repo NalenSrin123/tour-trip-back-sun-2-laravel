@@ -112,7 +112,7 @@
 
             <div class="otp-box">
                 <p class="otp-code">{{ $otp }}</p>
-                <p class="expiration">This code will expire in 10 minutes.</p>
+                <p class="expiration">This code will expire in 5 minutes.</p>
             </div>
 
             <div class="message">

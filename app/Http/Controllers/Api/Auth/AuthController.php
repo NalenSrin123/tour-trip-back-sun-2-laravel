@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Api\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
-use App\Service\OTPService;
 use App\Service\TelegramService;
+use App\Services\Messaging\TelegramStrategy;
+use App\Services\OTPService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -19,66 +20,66 @@ class AuthController extends Controller
     private $otpService;
     private $telegramService;
 
-    public function __construct(OTPService $oTPService, TelegramService $telegramService)
+    public function __construct(OTPService $oTPService, TelegramStrategy $telegramService)
     {
         $this->otpService = $oTPService;
         $this->telegramService = $telegramService;
     }
 
     public function register(Request $request)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|max:255', // Removed unique:users to allow unverified re-registration
-        'password_hash' => 'required|min:8|confirmed',
-        'channel' => 'nullable|in:telegram,email',
-    ]);
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255', // Removed unique:users to allow unverified re-registration
+            'password_hash' => 'required|min:8|confirmed',
+            'channel' => 'nullable|in:telegram,email',
+        ]);
 
-    // 1. Run database operations
-    $user = DB::transaction(function () use ($request) {
-        $user = User::where('email', $request->email)->first();
+        // 1. Run database operations
+        $user = DB::transaction(function () use ($request) {
+            $user = User::where('email', $request->email)->first();
 
-        if ($user) {
-            // Reject if the user exists AND is already verified
-            if ($user->email_verified_at !== null) {
-                throw ValidationException::withMessages([
-                    'email' => ['This email has already been taken.'],
+            if ($user) {
+                // Reject if the user exists AND is already verified
+                if ($user->email_verified_at !== null) {
+                    throw ValidationException::withMessages([
+                        'email' => ['This email has already been taken.'],
+                    ]);
+                }
+
+                // If they exist but are unverified, update their details with the latest input
+                $user->update([
+                    'name' => $request->name,
+                    'password_hash' => Hash::make($request->password_hash),
                 ]);
+            } else {
+                // Create a brand-new user
+                $user = User::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'password_hash' => Hash::make($request->password_hash),
+                ]);
+
+                // Assign default 'customer' role
+                $customerRole = Role::where('name', 'customer')->first();
+                if ($customerRole) {
+                    $user->roles()->attach($customerRole->id);
+                }
             }
-            
-            // If they exist but are unverified, update their details with the latest input
-            $user->update([
-                'name' => $request->name,
-                'password_hash' => Hash::make($request->password_hash),
-            ]);
-        } else {
-            // Create a brand-new user
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password_hash' => Hash::make($request->password_hash),
-            ]);
 
-            // Assign default 'customer' role
-            $customerRole = Role::where('name', 'customer')->first();
-            if ($customerRole) {
-                $user->roles()->attach($customerRole->id);
-            }
-        }
+            return $user;
+        });
 
-        return $user;
-    });
+        // 2. Send OTP outside the transaction (Ensures DB commit was successful first)
+        $channel = $request->input('channel', 'telegram');
+        $this->otpService->generateAndSend($user, $channel);
 
-    // 2. Send OTP outside the transaction (Ensures DB commit was successful first)
-    $channel = $request->input('channel', 'telegram');
-    $this->otpService->generateAndSend($user, $channel);
-
-    // 3. Return the HTTP JSON response
-    return response()->json([
-        'message' => 'User registered. Please check for your verification OTP.',
-        'user' => $user->load('roles'), // Optional: load roles to confirm in the response
-    ], 201);
-}
+        // 3. Return the HTTP JSON response
+        return response()->json([
+            'message' => 'User registered. Please check for your verification OTP.',
+            'user' => $user->load('roles'), // Optional: load roles to confirm in the response
+        ], 201);
+    }
 
 
     public function login(Request $request)
@@ -147,7 +148,7 @@ class AuthController extends Controller
         // Set Role to 'user' if not already set
         $userRole = Role::where('name', 'user')->first();
         if ($userRole) {
-            $user->roles()->syncWithoutDetaching([$userRole->id]);
+            $user->roles()->syncWithoutDetaching([$userRole->id]); // This will add the role if not present, without removing existing roles
 
             // Tip: Since it's a brand new user, you can also just use attach():
             // $user->roles()->attach($userRole->id);
