@@ -5,6 +5,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Sanctum;
 
+use App\Http\Controllers\Api\TourInclusionController;
+
+
+
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -22,3 +26,8 @@ Route::prefix('/auth')->group(function () {
         Route::post('/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
     });
 });
+
+
+
+// Tour Inclusions CRUD API Routes
+Route::apiResource('tour-inclusions', TourInclusionController::class);

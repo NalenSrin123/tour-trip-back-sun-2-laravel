@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class included_excluded extends Model
+class Included_excluded extends Model
 {
     protected $table = 'tour_inclusions';
 
