@@ -5,7 +5,8 @@ use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\TourController;
 use App\Http\Controllers\Api\TourImageController;
 use App\Http\Controllers\Api\Auth\GoogleController;
-use App\Http\Controllers\RoleController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\DestinationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +27,9 @@ Route::apiResource('roles', RoleController::class);
 // Tour Images CRUD API Routes
 Route::patch('tour-images/{id}/primary', [TourImageController::class, 'setPrimary']);
 Route::apiResource('tour-images', TourImageController::class);
+Route::apiResource('destinations', DestinationController::class);
+
+
 
 Route::prefix('/auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
