@@ -9,6 +9,10 @@ use App\Http\Controllers\RoleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Api\TourInclusionController;
+
+
+
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -47,3 +51,8 @@ Route::prefix('/tours')->group(function () {
         Route::post('/{id}/restore', [TourController::class, 'restore']);
     });
 });
+
+
+
+// Tour Inclusions CRUD API Routes
+Route::apiResource('tour-inclusions', TourInclusionController::class);
