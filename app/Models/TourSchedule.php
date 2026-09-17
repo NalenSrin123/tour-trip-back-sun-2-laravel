@@ -28,14 +28,18 @@ class TourSchedule extends Model
         'price_override' => 'decimal:2',
     ];
 
-    // public function tour(): BelongsTo
-    // {
-    //     return $this->belongsTo(Tour::class);
-    // }
-     public function guideAssignments(): HasMany
-     {
+    // Relationship: A schedule belongs to a tour.
+    public function tour(): BelongsTo
+    {
+        return $this->belongsTo(Tour::class, 'tour_id');
+    }
+
+
+    // Relationship: A schedule has many guide assignments.
+    public function guideAssignments(): HasMany
+    {
         return $this->hasMany(GuideAssignment::class, 'schedule_id');
-     }
+    }
 
     
 }

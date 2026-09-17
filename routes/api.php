@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\TourInclusionController;
+use App\Http\Controllers\Api\TourScheduleController;
 
 
 
@@ -56,3 +57,7 @@ Route::prefix('/tours')->group(function () {
 
 // Tour Inclusions CRUD API Routes
 Route::apiResource('tour-inclusions', TourInclusionController::class);
+
+// Tour Schedules CRUD API Routes
+Route::apiResource('tour-schedules', TourScheduleController::class);
+

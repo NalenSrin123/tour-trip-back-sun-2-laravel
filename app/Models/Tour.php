@@ -57,4 +57,9 @@ class Tour extends Model
     {
         return $this->hasMany(TourSchedule::class, 'tour_id');
     }
+    public function schedules()
+    {
+        return $this->hasMany(TourSchedule::class, 'tour_id');
+    }
+    
 }
