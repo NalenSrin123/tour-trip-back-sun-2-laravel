@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\DestinationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\GuideController;
 
 use App\Http\Controllers\Api\TourInclusionController;
 
@@ -28,6 +29,7 @@ Route::apiResource('roles', RoleController::class);
 Route::patch('tour-images/{id}/primary', [TourImageController::class, 'setPrimary']);
 Route::apiResource('tour-images', TourImageController::class);
 Route::apiResource('destinations', DestinationController::class);
+Route::apiResource('guides', GuideController::class);
 
 
 
