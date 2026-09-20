@@ -39,6 +39,8 @@ Route::prefix('/auth')->group(function () {
     Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
     Route::post('/login', [AuthController::class, 'login']);
 
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
     // Google OAuth Routes
     Route::get('/google/redirect', [GoogleController::class, 'redirectToGoogle']);
     Route::get('/google/callback', [GoogleController::class, 'handleGoogleCallback']);

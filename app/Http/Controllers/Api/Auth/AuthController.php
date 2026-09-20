@@ -179,4 +179,50 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Logged out successfully.'], 200);
     }
+
+    public function resendOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'channel' => 'nullable|in:telegram,email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        // Check if the user is already verified
+        if (!is_null($user->email_verified_at)) {
+            return response()->json(['message' => 'User is already verified.'], 400);
+        }
+
+        // Resend OTP
+        $channel = $request->input('channel', 'telegram');
+        $this->otpService->generateAndSend($user, $channel);
+
+        return response()->json(['message' => 'A new OTP has been sent.'], 200);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        // Update the user's password
+        $user->update([
+            'password_hash' => Hash::make($request->new_password),
+        ]);
+
+        return response()->json(['message' => 'Password has been reset successfully.'], 200);
+    }
 }
