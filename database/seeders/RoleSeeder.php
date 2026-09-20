@@ -56,5 +56,18 @@ class RoleSeeder extends Seeder
         // Note: Customers typically don't need backend permissions attached, 
         // they just need the 'customer' role for basic front-end access checks.
 
+        // 6. Customers get public read access + ability to manage their own bookings
+        $customerPermissions = $allPermissions->whereIn('name', [
+            'view_tours',
+            'view_categories',
+            'view_locations',
+            'view_guides',
+            'store_bookings',  // Essential for making a booking
+            'view_bookings',   // Essential for seeing their booking history
+            'cancel_bookings'  // So they can cancel their own trip
+        ]);
+
+        // FIX: Removed the extra [] array brackets that were causing an SQL error
+        $customer->permissions()->sync($customerPermissions->pluck('id'));
     }
 }

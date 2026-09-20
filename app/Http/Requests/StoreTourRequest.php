@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 class StoreTourRequest extends FormRequest
 {
@@ -20,13 +21,26 @@ class StoreTourRequest extends FormRequest
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
+
+    protected function prepareForValidation(): void
+    {
+        // If the request has a title, generate a slug from it and merge it into the request
+        if ($this->has('title')) {
+            $this->merge([
+                'slug' => Str::slug($this->title),
+            ]);
+        }
+    }
     public function rules(): array
     {
+        $tourId = $this->route('tour') ? $this->route('tour')->id : null;
+        
         return [
             'category_id' => 'required|exists:categories,id',
             'destination_id' => 'required|exists:destinations,id',
             'title' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:tours,slug',
+
+            'slug' => 'nullable|string|max:255|unique:tours,slug'. $tourId,
             'duration_days' => 'nullable|integer|min:1',
             'duration_nights' => 'nullable|integer|min:0',
             'base_price' => 'required|numeric|min:0',

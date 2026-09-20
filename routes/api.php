@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\ReferenceDataController;
 use App\Http\Controllers\Api\TourController;
 use App\Http\Controllers\Api\TourImageController;
 use App\Http\Controllers\Api\Auth\GoogleController;
@@ -49,16 +50,29 @@ Route::prefix('/auth')->group(function () {
 });
 
 
-Route::prefix('/tours')->group(function () {
-    Route::apiResource('/', TourController::class)->only(['index', 'show'])->parameters(['' => 'id']);
 
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::apiResource('/', TourController::class)->only(['store', 'update', 'destroy'])->parameters(['' => 'id']);
-        Route::post('/{id}/restore', [TourController::class, 'restore']);
-    });
+// 1. Public Routes (Anyone can view tours)
+Route::apiResource('tours', TourController::class)->only(['index', 'show']);
+// 2. Protected Routes (Must be logged in and have permissions)
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::post('tours', [TourController::class, 'store'])
+        ->middleware('can:store_tours');
+
+    Route::put('tours/{tour}', [TourController::class, 'update'])
+        ->middleware('can:update_tours');
+    Route::patch('tours/{tour}', [TourController::class, 'update'])
+        ->middleware('can:update_tours');
+    Route::delete('tours/{tour}', [TourController::class, 'destroy'])
+        ->middleware('can:destroy_tours');
+
+    Route::post('tours/{tour}/restore', [TourController::class, 'restore'])
+        ->middleware('can:update_tours');
+
 });
-
 
 
 // Tour Inclusions CRUD API Routes
 Route::apiResource('tour-inclusions', TourInclusionController::class);
+
+Route::get('/reference-data', [ReferenceDataController::class, 'index']);

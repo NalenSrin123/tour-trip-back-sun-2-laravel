@@ -64,6 +64,14 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id')->withTimestamps();
     }
 
+    public function hasPermission(string $permissionName): bool
+    {
+        // This gets all roles, extracts all permissions, and checks if the name exists.
+        // It's highly recommended to eager load roles.permissions when authenticating to avoid N+1 issues.
+        return $this->roles->flatMap(function ($role) {
+            return $role->permissions;
+        })->contains('name', $permissionName);
+    }
     public function permissions()
     {
         return $this->belongsToMany(Permission::class, 'user_permissions', 'user_id', 'permission_id');
