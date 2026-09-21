@@ -25,6 +25,11 @@ class Booking extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function tourSchedule()
+    {
+        return $this->belongsTo(TourSchedule::class, 'tour_schedule_id');
+    }
+
     public function participants()
     {
         return $this->hasMany(Participant::class);
