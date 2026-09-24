@@ -36,15 +36,18 @@ class AppServiceProvider extends ServiceProvider
         // ---------------------------------------------------------
         // 2. DYNAMIC PERMISSION GATES (All 31 Permissions)
         // ---------------------------------------------------------
-        // Creates Gates like: Gate::allows('store_tours')
-        if (Schema::hasTable('permissions')) {
-            $permissions = Permission::all();
+        try {
+            if (Schema::hasTable('permissions')) {
+                $permissions = Permission::all();
 
-            foreach ($permissions as $permission) {
-                Gate::define($permission->name, function (User $user) use ($permission) {
-                    return $user->hasPermission($permission->name);
-                });
+                foreach ($permissions as $permission) {
+                    Gate::define($permission->name, function (User $user) use ($permission) {
+                        return $user->hasPermission($permission->name);
+                    });
+                }
             }
+        } catch (\Throwable $e) {
+            // Prevent commands from crashing when DB is offline or migrating
         }
 
         // ---------------------------------------------------------
