@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\api\PaymentApiController;
 use App\Http\Controllers\Api\ReferenceDataController;
 use App\Http\Controllers\Api\TourController;
 use App\Http\Controllers\Api\TourImageController;
 use App\Http\Controllers\Api\Auth\GoogleController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\DestinationController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\GuideController;
@@ -78,3 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::apiResource('tour-inclusions', TourInclusionController::class);
 
 Route::get('/reference-data', [ReferenceDataController::class, 'index']);
+
+//ABA Checkout API Routes
+Route::post('/payway/checkout', [PaymentApiController::class, 'checkout']);
+Route::get('/payway/callback', [PaymentApiController::class, 'callback'])->name('payment.callback');

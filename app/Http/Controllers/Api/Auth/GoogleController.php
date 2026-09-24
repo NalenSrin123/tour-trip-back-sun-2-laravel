@@ -45,7 +45,7 @@ class GoogleController extends Controller
                 ]);
 
                 // 3. Set Role to 'user' if not already set
-                $userRole = Role::where('name', 'user')->first();
+                $userRole = Role::where('name', 'customer')->first();
                 if ($userRole) {
                     $user->roles()->syncWithoutDetaching([$userRole->id]);
                 }

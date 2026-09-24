@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PaymentController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -33,4 +34,33 @@ Route::get('/user/{id}', function ($id) {
         });
     });
     return response()->json($users);
+});
+
+Route::post('/payway/checkout', [PaymentController::class, 'checkout']);
+Route::get('/payway/callback', [PaymentController::class, 'callback'])->name('payment.callback');
+
+// Polling status endpoint called by the Blade script
+Route::get('/payment/check-status/{tran_id}', [PaymentController::class, 'checkStatus'])
+    ->name('payment.check-status');
+
+// Redirect page once payment is confirmed
+Route::get('/payment/success', [PaymentController::class, 'success'])
+    ->name('payment.success');
+
+
+
+
+
+
+
+
+use Illuminate\Support\Facades\Artisan;
+
+Route::get('/run-setup', function () {
+    Artisan::call('storage:link');
+    Artisan::call('migrate', ['--force' => true]);
+    Artisan::call('config:cache');
+    Artisan::call('route:cache');
+    Artisan::call('view:cache');
+    return 'Setup Completed Successfully!';
 });
