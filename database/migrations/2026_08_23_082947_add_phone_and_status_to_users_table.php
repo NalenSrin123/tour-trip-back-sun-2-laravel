@@ -12,15 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'phone')) {
-                $table->string('phone')->nullable()->after('email');
-            }
-            if (!Schema::hasColumn('users', 'status')) {
-                $table->enum('status', ['active', 'inactive'])->default('inactive')->after('phone');
-            }
-            if (!Schema::hasColumn('users', 'deleted_at')) {
-                $table->softDeletes();
-            }
+            $table->string('phone')->nullable()->after('email');
+            $table->enum('status', ['active', 'inactive'])->default('inactive')->after('phone');
+            $table->softDeletes(); // support soft deletes for users
         });
     }
 
