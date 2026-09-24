@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\GuideController;
 
+use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\TourInclusionController;
 
 
@@ -79,8 +80,12 @@ Route::middleware('auth:sanctum')->group(function () {
 // Tour Inclusions CRUD API Routes
 Route::apiResource('tour-inclusions', TourInclusionController::class);
 
+// Bookings API Routes
+Route::patch('bookings/{id}/cancel', [BookingController::class, 'cancel']);
+Route::apiResource('bookings', BookingController::class)->only(['index', 'store', 'show']);
+
 Route::get('/reference-data', [ReferenceDataController::class, 'index']);
 
-//ABA Checkout API Routes
+// ABA Checkout API Routes
 Route::post('/payway/checkout', [PaymentApiController::class, 'checkout']);
 Route::get('/payway/callback', [PaymentApiController::class, 'callback'])->name('payment.callback');
