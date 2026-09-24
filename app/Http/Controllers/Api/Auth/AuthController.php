@@ -209,19 +209,83 @@ class AuthController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
+            'old_password' => 'required|string|min:8',
             'new_password' => 'required|string|min:8|confirmed',
         ]);
 
         $user = User::where('email', $request->email)->first();
-
-        if (!$user) {
-            return response()->json(['message' => 'User not found.'], 404);
+        if (!$user || !Hash::check($request->old_password, $user->password_hash)) {
+            return response()->json(['message' => 'Credentials are incorrect.'], 400);
         }
 
         // Update the user's password
         $user->update([
             'password_hash' => Hash::make($request->new_password),
         ]);
+
+        // Revoke other tokens only if an active access token exists
+        if ($user->currentAccessToken()) {
+            $user->tokens()->where('id', '!=', $user->currentAccessToken()->id)->delete();
+        } else {
+            // If not authenticated via a Sanctum bearer token, just revoke all tokens
+            $user->tokens()->delete();
+        }
+        return response()->json(['message' => 'Password has been reset successfully.'], 200);
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'channel' => 'nullable|in:telegram,email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        // Generate and send OTP for password reset
+        $channel = $request->input('channel', 'telegram');
+        $this->otpService->generateAndSend($user, $channel);
+
+        return response()->json(['message' => 'OTP for password reset has been sent.'], 200);
+    }
+
+    public function resetPasswordWithOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        // Find the latest unused OTP for this user
+        $latestOtp = $user->otps()
+            ->where('is_used', false)
+            ->where('expires_at', '>', Carbon::now())
+            ->latest()
+            ->first();
+
+        if (!$latestOtp || !Hash::check($request->otp, $latestOtp->code)) {
+            return response()->json(['message' => 'Invalid or expired OTP.'], 401);
+        }
+
+        // Mark the OTP as used
+        $user->otps()->where('id', $latestOtp->id)->update(['is_used' => true]);
+
+        // Update the user's password
+        $user->update([
+            'password_hash' => Hash::make($request->new_password),
+        ]);
+
+        // Revoke all existing tokens (forces re-login on all devices)
+        $user->tokens()->delete();
 
         return response()->json(['message' => 'Password has been reset successfully.'], 200);
     }

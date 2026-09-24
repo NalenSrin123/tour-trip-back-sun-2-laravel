@@ -41,8 +41,9 @@ Route::prefix('/auth')->group(function () {
     Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
     Route::post('/login', [AuthController::class, 'login']);
 
-    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::post('/resend-otp', [AuthController::class, 'resendOtp']);
+    Route::post('/reset-password-with-otp', [AuthController::class, 'resetPasswordWithOtp']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     // Google OAuth Routes
     Route::get('/google/redirect', [GoogleController::class, 'redirectToGoogle']);
     Route::get('/google/callback', [GoogleController::class, 'handleGoogleCallback']);
@@ -50,6 +51,7 @@ Route::prefix('/auth')->group(function () {
     // 2. PROTECTED ROUTES (Middleware goes here)
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
+        Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     });
 });
 
@@ -84,3 +86,4 @@ Route::get('/reference-data', [ReferenceDataController::class, 'index']);
 //ABA Checkout API Routes
 Route::post('/payway/checkout', [PaymentApiController::class, 'checkout']);
 Route::get('/payway/callback', [PaymentApiController::class, 'callback'])->name('payment.callback');
+
