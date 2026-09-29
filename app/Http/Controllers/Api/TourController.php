@@ -69,12 +69,10 @@ class TourController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateTourRequest $updateTourRequest, string $id)
+    public function update(UpdateTourRequest $updateTourRequest, Tour $tour)
     {
-        // 2. Manually fetch the real database record
-        $tour = Tour::findOrFail($id);
-
-        // 3. Update it using the strictly validated data
+        
+        // Update it using the strictly validated data
         $tour->update($updateTourRequest->validated());
 
         return [
