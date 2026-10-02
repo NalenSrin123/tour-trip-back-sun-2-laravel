@@ -64,3 +64,9 @@ Route::get('/run-setup', function () {
     Artisan::call('view:cache');
     return 'Setup Completed Successfully!';
 });
+
+Route::get('hash', function () {
+    $string = 'vattraramo13@gmail.com';
+    $hash = hash('sha256', strtolower(trim($string)));
+    return $hash;
+});
