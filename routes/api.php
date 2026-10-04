@@ -33,8 +33,30 @@ Route::apiResource('roles', RoleController::class);
 Route::patch('tour-images/{id}/primary', [TourImageController::class, 'setPrimary']);
 Route::apiResource('tour-images', TourImageController::class);
 Route::apiResource('destinations', DestinationController::class);
-Route::apiResource('guides', GuideController::class);
 
+
+// Route::apiResource('guides', GuideController::class);
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get('guides', [GuideController::class, 'index'])
+    ->middleware('can:view_guides');
+
+    Route::get('guides/{id}', [GuideController::class, 'show'])
+    ->middleware('can:view_guides');
+    
+    //User can be request to create a guide profile, but only admin can approve it
+    Route::post('guides', [GuideController::class, 'store']);
+
+    Route::put('guides/{id}', [GuideController::class, 'update'])
+    ->middleware('can:update_guides');
+    Route::patch('guides/{id}', [GuideController::class, 'update'])
+    ->middleware('can:update_guides');
+    Route::delete('guides/{id}', [GuideController::class, 'destroy'])
+    ->middleware('can:destroy_guides');
+    
+    Route::post('guides/{id}/approve', [GuideController::class, 'adminApproveGuide'])
+    ->middleware('can:update_guides');
+});
 
 
 Route::prefix('/auth')->group(function () {
