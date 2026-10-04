@@ -90,5 +90,6 @@ Route::get('/reference-data', [ReferenceDataController::class, 'index']);
 
 // ABA Checkout API Routes
 Route::post('/payway/checkout', [PaymentApiController::class, 'checkout']);
-Route::get('/payway/callback', [PaymentApiController::class, 'callback'])->name('payment.callback');
-
+Route::post('/payway/callback', [PaymentApiController::class, 'callback'])->name('payment.callback');
+Route::post('/payment/check-payment-status/', [PaymentApiController::class, 'checkPaymentStatus'])->name('payment.check-status');
+Route::post('/payment/success', [PaymentApiController::class, 'success'])->name('payment.success');

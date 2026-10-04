@@ -13,8 +13,7 @@ class Payment extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'invoice_id',
-        'receipt_id',
+        'booking_id',
         'amount',
         'payment_method',
         'payment_status',
@@ -27,13 +26,18 @@ class Payment extends Model
         'payment_date' => 'datetime',
     ];
 
-    public function invoice(): BelongsTo
+    public function booking()
     {
-        return $this->belongsTo(Invoice::class, 'invoice_id');
+        return $this->hasMany(Booking::class, 'booking_id');
     }
 
-    public function receipt(): HasOne
+   public function invoice()
     {
-        return $this->hasOne(Receipt::class, 'payment_id');
+        return $this->hasOne(Invoice::class, 'payment_id');
+    }
+
+    public function idempotency()
+    {
+        return $this->hasOne(Idempotency::class);
     }
 }

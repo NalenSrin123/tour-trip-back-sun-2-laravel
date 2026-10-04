@@ -37,7 +37,7 @@ Route::get('/user/{id}', function ($id) {
 });
 
 Route::post('/payway/checkout', [PaymentController::class, 'checkout']);
-Route::get('/payway/callback', [PaymentController::class, 'callback'])->name('payment.callback');
+Route::post('/payway/callback', [PaymentController::class, 'callback'])->name('web.payment.callback');
 
 // Polling status endpoint called by the Blade script
 Route::get('/payment/check-status/{tran_id}', [PaymentController::class, 'checkStatus'])
@@ -47,7 +47,9 @@ Route::get('/payment/check-status/{tran_id}', [PaymentController::class, 'checkS
 Route::get('/payment/success', [PaymentController::class, 'success'])
     ->name('payment.success');
 
-
+Route::get('/payway/test', function () {
+    return view('test-checkout');
+});
 
 
 

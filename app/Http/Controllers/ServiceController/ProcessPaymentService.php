@@ -23,10 +23,10 @@ class ProcessPaymentService extends Controller
         $lastname = $validatedData['lastname'] ?? 'User';
         $phone = $validatedData['phone'] ?? ($user->phone ?? '012345678');
         $email = $validatedData['email'] ?? ($user->email ?? 'customer@example.com');
-
+        $amount = number_format((float) ($validatedData['amount'] ?? 1.00), 2, '.', '');
         // Request PayWay Purchase
         $result = $this->payway->purchase([
-            'amount' => $validatedData['amount'],
+            'amount' => $amount,
             'firstname' => $firstname,
             'lastname' => $lastname,
             'phone' => $phone,
@@ -78,12 +78,5 @@ class ProcessPaymentService extends Controller
             'status_code' => $statusCode,
             'data' => $result,
         ];
-    }
-
-    public function success(Request $request)
-    {
-        $tranId = $request->query('tran_id');
-
-        return view('payway.success', compact('tranId'));
     }
 }

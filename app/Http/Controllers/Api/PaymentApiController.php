@@ -4,7 +4,7 @@ namespace App\Http\Controllers\api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\ServiceController\ProcessPaymentService;
-use App\Services\PaywayService;
+use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,11 +19,14 @@ class PaymentApiController extends Controller
     public function checkout(Request $request)
     {
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'booking_id' => ['required','max:50'],
             'phone' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:100'],
             'lastname' => ['nullable', 'string', 'max:50'],
         ]);
+
+        $booking = Booking::findOrFail($validated['booking_id']);
+        $validated['amount'] = $booking->total_price; // Use total_price for API checkout
 
         try {
             // Call the exact same shared service
@@ -45,43 +48,39 @@ class PaymentApiController extends Controller
     }
     public function callback(Request $request)
     {
+        $validated = $request->validate([
+            'tran_id' => ['required', 'string'],
+            'status' => ['required', 'string'],
+        ]);
         // Handle redirect back from PayWay after user pays
-        $tranId = $request->query('tran_id');
-        $status = $request->query('status');
-
+        $tranId = $validated['tran_id'];
+        $status = $validated['status'];
         return response()->json([
             'message' => 'Payment processed',
             'tran_id' => $tranId,
             'status' => $status,
         ]);
     }
-    public function checkStatus(string $tran_id, PaywayService $payway)
+    public function checkPaymentStatus(Request $request, ProcessPaymentService $payway)
     {
-        $result = $payway->checkTransaction($tran_id);
+        $validated = $request->validate([
+            'tran_id' => ['required', 'string'],
+        ]);
+        $statusData = $payway->verifyTransaction($validated['tran_id']);
 
-        // PayWay returns status code "00" or 0 when the user has completed payment
-        $statusCode = $result['status']['code'] ?? null;
-
-        if ($statusCode === '00' || $statusCode === 0 || $statusCode === '0') {
-            // Optional: Update your order record in DB to 'PAID' here
-
+        if ($statusData['is_paid']) {
             return response()->json([
                 'status' => 0,
                 'message' => 'Paid successfully',
-                'data' => $result,
+                'data' => $statusData['data'],
             ]);
         }
 
+
         return response()->json([
-            'status' => $statusCode ?? 1,
-            'message' => 'Pending payment',
+            'message' => 'Check Payment status.',
+            'data' => $statusData['data'],
         ]);
     }
 
-    public function success(Request $request)
-    {
-        $tranId = $request->query('tran_id');
-
-        return view('payway.success', compact('tranId'));
-    }
 }

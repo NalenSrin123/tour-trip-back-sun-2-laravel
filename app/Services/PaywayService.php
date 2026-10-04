@@ -34,11 +34,12 @@ class PaywayService
      */
     public function purchase(array $data)
     {
-        // 1. UTC Timestamp: strictly YYYYMMDDHHmmss
-        $reqTime = gmdate('YmdHis');
+        // 1. Cambodia local time (UTC+7): strictly YYYYMMDDHHmmss
+        $now = new \DateTimeImmutable('now', new \DateTimeZone('Asia/Phnom_Penh'));
+        $reqTime = $now->format('YmdHis');
 
         // 2. Unique tran_id (max 20 chars)
-        $tranId = date('ymdHis') . mt_rand(1000, 9999);
+        $tranId = $now->format('ymdHis') . mt_rand(1000, 9999);
 
         // 3. Normalized parameters
         $amount = number_format((float) ($data['amount'] ?? 1.00), 2, '.', '');
@@ -46,7 +47,7 @@ class PaywayService
         $lastName = (string) ($data['lastname'] ?? 'Sok');
         $phone = (string) ($data['phone'] ?? '012345678');
         $email = (string) ($data['email'] ?? 'dara@example.com');
-        $returnUrl = base64_encode($data['return_url'] ?? 'https://yourwebsite.com/callback');
+        $returnUrl = base64_encode($data['return_url'] ?? route('payment.callback'));
 
         // 4. Concatenate strictly in PayWay's expected sequence
         $rawHash = $reqTime . $this->merchantId . $tranId . $amount . $firstName . $lastName . $email . $phone . $returnUrl;
@@ -81,7 +82,8 @@ class PaywayService
  */
 public function checkTransaction(string $tranId)
 {
-    $reqTime = gmdate('YmdHis');
+    // Use the same Cambodia timezone as the purchase request.
+    $reqTime = (new \DateTimeImmutable('now', new \DateTimeZone('Asia/Phnom_Penh')))->format('YmdHis');
     
     // Hash sequence for check-transaction: req_time + merchant_id + tran_id
     $rawHash = $reqTime . $this->merchantId . $tranId;

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\ServiceController\ProcessPaymentService;
+use App\Models\Booking;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
@@ -15,12 +16,14 @@ class PaymentController extends Controller
     public function checkout(Request $request)
     {
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'booking_id' => ['required','max:50'],
             'phone' => ['nullable', 'string', 'max:20'],
             'email' => ['nullable', 'email', 'max:100'],
             'lastname' => ['nullable', 'string', 'max:50'],
         ]);
 
+        $booking = Booking::findOrFail($validated['booking_id']);
+        $validated['amount'] = $booking->total_price; // Use total_price for Web checkout
         try {
             // Call the shared service
             $data = $this->paymentProcess->processCheckout($validated);
@@ -29,6 +32,7 @@ class PaymentController extends Controller
             return view('payway.checkout', [
                 'tran_id' => $data['tran_id'],
                 'response' => $data['response'],
+                'amount' => $validated['amount'],
             ]);
 
         } catch (\Exception $e) {
