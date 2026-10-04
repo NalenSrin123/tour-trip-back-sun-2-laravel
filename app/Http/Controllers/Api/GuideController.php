@@ -122,7 +122,7 @@ class GuideController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Guide updated successfully',
+            'message' => 'Guide Approved successfully',
             'data' => $guide
         ], 200);
     }

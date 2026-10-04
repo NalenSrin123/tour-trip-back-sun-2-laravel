@@ -31,16 +31,15 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('payments', function (Blueprint $table) {
-            // Drop the new foreign key constraint
-            $table->dropForeign(['invoice_id']);
-            $table->dropColumn('invoice_id');
+            // 1. Drop the added booking_id foreign key and column
+            $table->dropForeign(['booking_id']);
+            $table->dropColumn('booking_id');
 
-            // Re-add the old foreign key constraint
-            $table->foreignId('booking_id')->constrained('bookings')->cascadeOnDelete();
+            // 2. Restore receipt_id (adjust type/nullable according to your original schema)
+            $table->foreignId('receipt_id')->nullable(); 
 
-            // Drop the receipt_id column
-            $table->dropColumn('receipt_id');
-            
+            // 3. Restore invoice_id foreign key (adjust constrained table if needed)
+            $table->foreignId('invoice_id')->nullable()->constrained('invoices')->cascadeOnDelete();
         });
     }
 };
