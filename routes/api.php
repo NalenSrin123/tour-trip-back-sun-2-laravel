@@ -106,10 +106,12 @@ Route::apiResource('tour-inclusions', TourInclusionController::class);
 
 // Bookings API Routes
 Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('bookings', BookingController::class)->only(['index', 'store', 'show']);
+    Route::apiResource('bookings', BookingController::class)->only(['index', 'show']);
+    Route::post('bookings', [BookingController::class, 'store'])->middleware('can:store_bookings');
+    Route::patch('bookings/{id}/cancel', [BookingController::class, 'cancel'])->middleware('can:cancel_bookings');
+    Route::delete('bookings/{id}', [BookingController::class, 'destroy'])->middleware('can:destroy_bookings');
 });
-Route::patch('bookings/{id}/cancel', [BookingController::class, 'cancel']);
-Route::apiResource('bookings', BookingController::class)->only(['index', 'store', 'show']);
+
 
 Route::get('/reference-data', [ReferenceDataController::class, 'index']);
 
@@ -132,5 +134,6 @@ Route::post('/payments/aba/callback', [PaymentCallbackController::class, 'handle
     ->name('aba.callback');
 
 //Check Payment Status (Frontend Polling Fallback)
-Route::get('/payments/{tranId}/status', [PaymentCallbackController::class, 'checkStatus'])
-    ->name('payment.status');
+
+Route::post('/payments/{tranId}/status', [PaymentCallbackController::class, 'checkStatus'])
+    ->name('payment.status')->middleware('auth:sanctum');

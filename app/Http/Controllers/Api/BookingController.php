@@ -22,7 +22,7 @@ class BookingController extends Controller
             'tourSchedule.tour',
             'user:id,name,email',
             'participants',
-            'invoice',
+            // 'invoice',
         ]);
 
         // If authenticated user is customer, show only their bookings
@@ -145,7 +145,7 @@ class BookingController extends Controller
             'tourSchedule.tour',
             'user:id,name,email',
             'participants',
-            'invoice',
+            // 'invoice',
         ])->find($id);
 
         if (!$booking) {
