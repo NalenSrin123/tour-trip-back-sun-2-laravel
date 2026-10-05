@@ -34,7 +34,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // ---------------------------------------------------------
-        // 2. DYNAMIC PERMISSION GATES (All 31 Permissions)
+        // 2. DYNAMIC PERMISSION GATES (All 32 Permissions)
         // ---------------------------------------------------------
         try {
             if (Schema::hasTable('permissions')) {

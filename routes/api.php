@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\TourImageController;
 use App\Http\Controllers\Api\Auth\GoogleController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\DestinationController;
+use App\Http\Controllers\Api\TourScheduleController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -39,23 +40,23 @@ Route::apiResource('destinations', DestinationController::class);
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('guides', [GuideController::class, 'index'])
-    ->middleware('can:view_guides');
+        ->middleware('can:view_guides');
 
     Route::get('guides/{id}', [GuideController::class, 'show'])
-    ->middleware('can:view_guides');
-    
+        ->middleware('can:view_guides');
+
     //User can be request to create a guide profile, but only admin can approve it
     Route::post('guides', [GuideController::class, 'store']);
 
     Route::put('guides/{id}', [GuideController::class, 'update'])
-    ->middleware('can:update_guides');
+        ->middleware('can:update_guides');
     Route::patch('guides/{id}', [GuideController::class, 'update'])
-    ->middleware('can:update_guides');
+        ->middleware('can:update_guides');
     Route::delete('guides/{id}', [GuideController::class, 'destroy'])
-    ->middleware('can:destroy_guides');
-    
+        ->middleware('can:destroy_guides');
+
     Route::post('guides/{id}/approve', [GuideController::class, 'adminApproveGuide'])
-    ->middleware('can:update_guides');
+        ->middleware('can:update_guides');
 });
 
 
@@ -115,3 +116,17 @@ Route::post('/payway/checkout', [PaymentApiController::class, 'checkout']);
 Route::post('/payway/callback', [PaymentApiController::class, 'callback'])->name('payment.callback');
 Route::post('/payment/check-payment-status/', [PaymentApiController::class, 'checkPaymentStatus'])->name('payment.check-status');
 Route::post('/payment/success', [PaymentApiController::class, 'success'])->name('payment.success');
+
+// Tour Schedule API Routes
+Route::middleware('auth:sanctum')->group(function () {
+    
+    Route::apiResource('tour-schedules', TourScheduleController::class)->only(['index', 'show']);
+
+    // 2. Admin & Tour Manager only
+    Route::middleware('role:admin|tour_manager')->group(function () {
+        
+        Route::apiResource('tour-schedules', TourScheduleController::class)->except(['index', 'show']);
+
+        Route::post('tour-schedules/{id}/restore', [TourScheduleController::class, 'restore']);
+    });
+});
