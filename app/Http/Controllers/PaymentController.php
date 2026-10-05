@@ -1,9 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
-
-use App\Http\Controllers\ServiceController\ProcessPaymentService;
 use App\Models\Booking;
+use App\Services\Controller\ProcessPaymentService;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
@@ -27,6 +26,7 @@ class PaymentController extends Controller
         try {
             // Call the shared service
             $data = $this->paymentProcess->processCheckout($validated);
+            
 
             // Render Checkout View for Web
             return view('payway.checkout', [

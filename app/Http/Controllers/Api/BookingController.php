@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreBookingRequest;
 use App\Models\Booking;
 use App\Models\TourSchedule;
+use App\Services\Controller\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -53,7 +54,7 @@ class BookingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Bookings retrieved successfully.',
-            'data'    => $bookings,
+            'data' => $bookings,
         ], 200);
     }
 
@@ -61,9 +62,9 @@ class BookingController extends Controller
      * Store a newly created booking with price & capacity calculation.
      * POST /api/bookings
      */
-    public function store(StoreBookingRequest $request)
+    public function store(StoreBookingRequest $request, PaymentService $paymentService)
     {
-        return DB::transaction(function () use ($request) {
+        return DB::transaction(function () use ($request, $paymentService) {
             // 1. Fetch TourSchedule with its Tour
             $schedule = TourSchedule::with('tour')->findOrFail($request->tour_schedule_id);
 
@@ -98,21 +99,22 @@ class BookingController extends Controller
 
             // 7. Create Booking
             $booking = Booking::create([
-                'user_id'          => $userId,
+                'user_id' => $userId,
                 'tour_schedule_id' => $schedule->id,
-                'total_price'      => $totalPrice,
+                'total_price' => $totalPrice,
                 'special_requests' => $request->special_requests,
-                'status'           => 'pending',
-                'type'             => $request->type,
-                'members_count'    => $membersCount,
+                'status' => 'pending',
+                'type' => $request->type,
+                'members_count' => $membersCount,
             ]);
+
 
             // 8. Create Participants if provided
             if ($request->has('participants')) {
                 foreach ($request->participants as $person) {
                     $booking->participants()->create([
-                        'name'      => $person['name'],
-                        'sex'       => $person['sex'] ?? null,
+                        'name' => $person['name'],
+                        'sex' => $person['sex'] ?? null,
                         'age_group' => $person['age_group'] ?? null,
                     ]);
                 }
@@ -121,10 +123,14 @@ class BookingController extends Controller
             // 9. Increment current_booked count in tour_schedules
             $schedule->increment('current_booked', $membersCount);
 
+            // 10. Payment record and ABA PayWay execution delegated to PaymentService
+            $paymentResult = $paymentService->createPaymentForBooking($booking, $request->all());
             return response()->json([
                 'success' => true,
                 'message' => 'Booking created successfully.',
-                'data'    => $booking->load(['tourSchedule.tour', 'participants', 'user:id,name,email']),
+                'data' => $booking->load(['tourSchedule.tour', 'participants', 'user:id,name,email']),
+                'payment' => $paymentResult['payment'],
+                'gateway' => $paymentResult['gateway_response'],
             ], 201);
         });
     }
@@ -152,7 +158,7 @@ class BookingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Booking retrieved successfully.',
-            'data'    => $booking,
+            'data' => $booking,
         ], 200);
     }
 
@@ -194,7 +200,7 @@ class BookingController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Booking cancelled successfully. Seats have been released.',
-                'data'    => $booking->fresh(['tourSchedule']),
+                'data' => $booking->fresh(['tourSchedule']),
             ], 200);
         });
     }

@@ -23,12 +23,14 @@ class StoreBookingRequest extends FormRequest
     {
         return [
             'tour_schedule_id' => 'required|exists:tour_schedules,id',
-            'type'             => 'required|in:Individual,Family,Team',
-            'members_count'    => 'nullable|integer|min:1',
+            'type' => 'required|in:Individual,Family,Team',
+            'members_count' => 'nullable|integer|min:1',
             'special_requests' => 'nullable|string|max:1000',
-            'participants'     => 'nullable|array',
-            'participants.*.name'      => 'required_with:participants|string|max:255',
-            'participants.*.sex'       => 'nullable|string|in:male,female,other,Male,Female,Other',
+            // Optional client details for ABA PayWay
+            'payment_method' => 'required|string|in:aba_pay,bakong,card,bank_transfer', // Ensure this line exists
+            'participants' => 'nullable|array',
+            'participants.*.name' => 'required_with:participants|string|max:255',
+            'participants.*.sex' => 'nullable|string|in:male,female,other,Male,Female,Other',
             'participants.*.age_group' => 'nullable|string|max:50',
         ];
     }
@@ -40,10 +42,10 @@ class StoreBookingRequest extends FormRequest
     {
         return [
             'tour_schedule_id.required' => 'The tour schedule field is required.',
-            'tour_schedule_id.exists'   => 'The selected tour schedule does not exist.',
-            'type.required'             => 'The booking type is required.',
-            'type.in'                   => 'The booking type must be Individual, Family, or Team.',
-            'members_count.min'         => 'Members count must be at least 1.',
+            'tour_schedule_id.exists' => 'The selected tour schedule does not exist.',
+            'type.required' => 'The booking type is required.',
+            'type.in' => 'The booking type must be Individual, Family, or Team.',
+            'members_count.min' => 'Members count must be at least 1.',
             'participants.*.name.required_with' => 'Participant name is required.',
         ];
     }

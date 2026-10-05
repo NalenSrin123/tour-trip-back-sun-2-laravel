@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\api\PaymentApiController;
+use App\Http\Controllers\Api\PaymentCallbackController;
 use App\Http\Controllers\Api\ReferenceDataController;
 use App\Http\Controllers\Api\TourController;
 use App\Http\Controllers\Api\TourImageController;
@@ -10,7 +10,6 @@ use App\Http\Controllers\Api\Auth\GoogleController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\DestinationController;
 use App\Http\Controllers\Api\TourScheduleController;
-use App\Http\Controllers\PaymentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\GuideController;
@@ -106,27 +105,32 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::apiResource('tour-inclusions', TourInclusionController::class);
 
 // Bookings API Routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('bookings', BookingController::class)->only(['index', 'store', 'show']);
+});
 Route::patch('bookings/{id}/cancel', [BookingController::class, 'cancel']);
 Route::apiResource('bookings', BookingController::class)->only(['index', 'store', 'show']);
 
 Route::get('/reference-data', [ReferenceDataController::class, 'index']);
 
-// ABA Checkout API Routes
-Route::post('/payway/checkout', [PaymentApiController::class, 'checkout']);
-Route::post('/payway/callback', [PaymentApiController::class, 'callback'])->name('payment.callback');
-Route::post('/payment/check-payment-status/', [PaymentApiController::class, 'checkPaymentStatus'])->name('payment.check-status');
-Route::post('/payment/success', [PaymentApiController::class, 'success'])->name('payment.success');
-
 // Tour Schedule API Routes
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     Route::apiResource('tour-schedules', TourScheduleController::class)->only(['index', 'show']);
 
-    // 2. Admin & Tour Manager only
+    // 1. Admin & Tour Manager only
     Route::middleware('role:admin|tour_manager')->group(function () {
-        
+
         Route::apiResource('tour-schedules', TourScheduleController::class)->except(['index', 'show']);
 
         Route::post('tour-schedules/{id}/restore', [TourScheduleController::class, 'restore']);
     });
 });
+
+// Payment Callback Routes
+Route::post('/payments/aba/callback', [PaymentCallbackController::class, 'handleAbaCallback'])
+    ->name('aba.callback');
+
+//Check Payment Status (Frontend Polling Fallback)
+Route::get('/payments/{tranId}/status', [PaymentCallbackController::class, 'checkStatus'])
+    ->name('payment.status');
