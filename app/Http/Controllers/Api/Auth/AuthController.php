@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\Messaging\TelegramStrategy;
@@ -85,7 +86,7 @@ class AuthController extends Controller
         // 3. Return the HTTP JSON response
         return response()->json([
             'message' => 'User registered. Please check for your verification OTP.',
-            'user' => $user->load('roles'), // Optional: load roles to confirm in the response
+            'user' => new UserResource($user->load('roles')), // Use the UserResource to format the user data
         ], 201);
     }
 
@@ -99,8 +100,7 @@ class AuthController extends Controller
             ]
         );
 
-        $user = User::where('email', $request->email)->first();
-
+        $user = User::with('roles')->where('email', $request->email)->first();
         if (!$user || !Hash::check($request->password, $user->password_hash)) {
             return response()->json(['message' => 'Invalid credentials.'], 401);
         }
@@ -119,9 +119,10 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Login successful.',
-            'access_token' => $token, // The frontend NEEDS this!
-            'user' => $user,
-            'token_type' => 'Bearer'
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => new UserResource($user),
+            // 'roles' => $user->roles->pluck('name'), // Keep if frontend expects roles at root
         ], 200);
     }
 
