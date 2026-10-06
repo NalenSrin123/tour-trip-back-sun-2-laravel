@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Services\Controller\PaymentService;
 use App\Services\Gateways\ABAPaywayService;
 use DB;
 use Illuminate\Http\JsonResponse;
@@ -75,34 +76,40 @@ class PaymentCallbackController extends Controller
     /**
      * Polling endpoint used by frontend waiting on KHQR screen
      */
-    public function checkStatus(string $tranId, ABAPaywayService $abaService): JsonResponse
+    public function checkStatus(string $tranId, PaymentService $paymentService): JsonResponse
     {
-        $payment = Payment::where('transaction_id', $tranId)->firstOrFail();
+        $cleanId = trim($tranId);
 
-        // 1. If already updated by the webhook, return immediately
-        if ($payment->payment_status === 'paid') {
+        // 1. Find payment record to know which gateway to call
+        $payment = Payment::where('transaction_id', $cleanId)
+            ->orWhere('id', $cleanId)
+            ->first();
+
+        if (!$payment) {
             return response()->json([
-                'status' => 'paid',
-                'booking_id' => $payment->booking_id,
-            ]);
+                'error' => 'Payment not found',
+                'tran_id' => $cleanId,
+            ], 404);
         }
 
-        // 2. Fallback check with ABA API
-        $statusData = $abaService->checkTransaction($tranId);
+        // 2. Fetch the raw response directly from the remote provider
+        $remoteData = $paymentService->checkPaymentStatus($payment);
 
-        if (isset($statusData['status']) && (int) $statusData['status'] === 0) {
-            $this->settlePayment($payment, $statusData);
-
-            return response()->json([
-                'status' => 'paid',
-                'booking_id' => $payment->booking_id,
-            ]);
+        // 3. (Optional) Still settle in the background if remote says it is completed/paid
+        $isPaid = false;
+        if ($payment->payment_method === 'bank_transfer') {
+            $status = strtolower($remoteData['data']['status'] ?? $remoteData['status'] ?? '');
+            $isPaid = in_array($status, ['completed', 'paid', 'approved', 'success']);
+        } else {
+            $isPaid = isset($remoteData['status']) && (string) $remoteData['status'] === '0';
         }
 
-        return response()->json([
-            'status' => 'pending',
-            'details' => $statusData,
-        ]);
+        if ($isPaid && !in_array(strtolower($payment->payment_status), ['paid', 'completed'])) {
+            $this->settlePayment($payment, $remoteData);
+        }
+
+        // 4. Return the exact remote gateway JSON response
+        return response()->json($remoteData);
     }
 
     /**

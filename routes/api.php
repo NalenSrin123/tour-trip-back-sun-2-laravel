@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Auth\GoogleController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\DestinationController;
 use App\Http\Controllers\Api\TourScheduleController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\GuideController;
@@ -135,5 +136,8 @@ Route::post('/payments/aba/callback', [PaymentCallbackController::class, 'handle
 
 //Check Payment Status (Frontend Polling Fallback)
 
-Route::post('/payments/{tranId}/status', [PaymentCallbackController::class, 'checkStatus'])
+Route::get('/payments/{tranId}/status', [PaymentCallbackController::class, 'checkStatus'])
     ->name('payment.status')->middleware('auth:sanctum');
+
+Route::get('/payments/{tranId}/check-status', [PaymentController::class, 'checkPaymentStatus'])
+    ->name('payment.check-status')->middleware('auth:sanctum');
