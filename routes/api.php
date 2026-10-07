@@ -130,7 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-// Payment Callback Routes
+// Payment Callback Routes web hook for ABA PayWay
 Route::post('/payments/aba/callback', [PaymentCallbackController::class, 'handleAbaCallback'])
     ->name('aba.callback');
 
@@ -141,3 +141,5 @@ Route::get('/payments/{tranId}/status', [PaymentCallbackController::class, 'chec
 
 Route::get('/payments/{tranId}/check-status', [PaymentController::class, 'checkPaymentStatus'])
     ->name('payment.check-status')->middleware('auth:sanctum');
+
+Route::post('/webhooks/payment', [PaymentCallbackController::class, 'handleWebhook'])->name('payment.webhook');

@@ -5,15 +5,111 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Services\Controller\PaymentProcessorService;
 use App\Services\Controller\PaymentService;
 use App\Services\Gateways\ABAPaywayService;
 use DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Str;
 
 class PaymentCallbackController extends Controller
 {
+    public function handleWebhook(
+        Request $request,
+        PaymentService $paymentService
+    ): JsonResponse {
+        Log::info('Payment Webhook Received', [
+            'payload' => $request->all(),
+        ]);
+
+        // 1. Identify transaction
+        $transactionId = $request->input('id')
+            ?? $request->input('transaction_id')
+            ?? $request->input('tran_id')
+
+            ?? $request->input('data.transaction_id')
+            ?? $request->input('data.tran_id')
+            ?? $request->input('data.id');
+
+
+        if (!$transactionId) {
+            return response()->json([
+                'message' => 'Transaction identifier missing',
+            ], 400);
+        }
+
+        // 2. Find local payment
+        $payment = Payment::where('transaction_id', $transactionId)
+            ->first();
+
+        if (!$payment) {
+            return response()->json([
+                'message' => 'Payment not found',
+            ], 404);
+        }
+
+        // 3. Already settled
+        if ($payment->payment_status === 'paid') {
+            return response()->json([
+                'message' => 'Payment already processed',
+            ], 200);
+        }
+
+        // 4. Verify payment with the actual gateway
+        $gatewayStatus = $paymentService->checkPaymentStatus($payment);
+
+        Log::info('Payment Gateway Status', [
+            'transaction_id' => $transactionId,
+            'payment_method' => $payment->payment_method,
+            'gateway_response' => $gatewayStatus,
+        ]);
+
+        // 5. Determine whether payment is actually successful
+        $isPaid = false;
+
+        if ($payment->payment_method === 'bank_transfer') {
+
+            // Analitekit / third-party gateway
+            $status = strtolower(
+                $gatewayStatus['data']['status']
+                ?? $gatewayStatus['status']
+                ?? ''
+            );
+
+            $isPaid = in_array($status, [
+                'success',
+                'paid',
+                'completed',
+                'approved',
+            ]);
+
+        } else {
+
+            // ABA PayWay
+            $isPaid = isset($gatewayStatus['status'])
+                && (string) $gatewayStatus['status'] === '0';
+        }
+
+        // 6. Payment is not successful
+        if (!$isPaid) {
+            return response()->json([
+                'message' => 'Payment not completed',
+                'status' => $gatewayStatus['status'] ?? null,
+            ], 200);
+        }
+
+        // 7. Settle payment
+        $this->settlePayment(
+            $payment,
+            $gatewayStatus
+        );
+
+        return response()->json([
+            'message' => 'Payment verified and settled successfully',
+        ], 200);
+    }
     public function handleAbaCallback(Request $request, ABAPaywayService $abaService)
     {
         // 1. Get tran_id sent by ABA PayWay
@@ -82,7 +178,6 @@ class PaymentCallbackController extends Controller
 
         // 1. Find payment record to know which gateway to call
         $payment = Payment::where('transaction_id', $cleanId)
-            ->orWhere('id', $cleanId)
             ->first();
 
         if (!$payment) {
@@ -120,7 +215,7 @@ class PaymentCallbackController extends Controller
         DB::transaction(function () use ($payment, $gatewayData) {
             $payment->update([
                 'payment_status' => 'paid',
-                'bakong_md5' => $gatewayData['bakong_md5'] ?? $payment->bakong_md5,
+                // 'bakong_md5' => $gatewayData['bakong_md5'] ?? $payment->bakong_md5,
                 'payment_date' => now(),
             ]);
 

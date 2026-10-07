@@ -26,7 +26,7 @@ class PaymentService
             'payment_method' => $paymentData['payment_method'] ?? 'aba_pay',
             'payment_status' => 'pending',
             'transaction_id' => $tranId,
-            'payment_date' => now(),
+            'payment_date' => null,
         ]);
 
         // 2. Resolve gateway and initiate payment request
