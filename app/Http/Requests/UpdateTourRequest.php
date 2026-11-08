@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Tour;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -23,13 +24,15 @@ class UpdateTourRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Safely extract the ID whether Laravel returns the Model object or a raw string
-        $tour = $this->route('id');
-        $tourId = $tour instanceof \App\Models\Tour ? $tour->id : $tour;
-
         return [
             'title' => 'sometimes|required|string|max:255',
-            'slug' => 'sometimes|required|string|max:255|unique:tours,slug,' . $tourId,
+            'slug' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('tours', 'slug')->ignore($this->route('tour')),
+            ],
             'base_price' => 'sometimes|required|numeric|min:0',
             'price_override' => 'sometimes|nullable|numeric|min:0',
             'duration_days' => 'sometimes|required|integer|min:1',

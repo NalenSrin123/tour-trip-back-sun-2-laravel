@@ -30,7 +30,7 @@ return new class extends Migration
             ])->default('published');
             $table->text('notes')->nullable();
             $table->timestamps();
-            $table->timestamp('deleted_at')->nullable();
+            $table->softDeletes();
         });
     }
 

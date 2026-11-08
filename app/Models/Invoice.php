@@ -11,7 +11,7 @@ class Invoice extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'booking_id',
+        'payment_id',
         'invoice_no',
         'sub_total',
         'tax_amount',
@@ -20,13 +20,17 @@ class Invoice extends Model
         'pdf_url',
     ];
 
-    public function booking()
+    public function payment()
     {
-        return $this->belongsTo(Booking::class);
+        return $this->belongsTo(Payment::class);
     }
 
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+    public function receipt()
+    {
+        return $this->hasOne(Receipt::class);
     }
 }

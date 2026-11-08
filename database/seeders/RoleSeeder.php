@@ -49,7 +49,9 @@ class RoleSeeder extends Seeder
         $guidePermissions = $allPermissions->whereIn('name', [
             'view_tours',
             'view_bookings',
-            'view_locations'
+            'view_locations',
+            'update_guides', // So they can update their own profile
+            
         ]);
         $guide->permissions()->sync($guidePermissions->pluck('id'));
 
