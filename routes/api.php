@@ -62,3 +62,5 @@ Route::prefix('/tours')->group(function () {
 
 // Tour Inclusions CRUD API Routes
 Route::apiResource('tour-inclusions', TourInclusionController::class);
+
+Route::apiResource('tour-demo', TourInclusionController::class);

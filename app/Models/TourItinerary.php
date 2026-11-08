@@ -21,4 +21,10 @@ class TourItinerary extends Model
     {
         return $this->belongsTo(Tour::class, 'tour_id');
     }
+
+
+    public function tours()
+    {
+        return $this->belongsTo(Tour::class, 'tour_id');
+    }
 }
